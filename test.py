@@ -11,7 +11,7 @@ dp = Dispatcher(bot)
 async def mg():
 
     msg = input()
-    id = '728473742'
+    id = '881210322'
     # for i in range(1):
     await bot.send_message(id,msg)
 

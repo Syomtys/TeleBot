@@ -30,23 +30,18 @@ async def echo(message: types.Message):
     f.write(usinfo+ '\n')
     f.close()
 
-    # print(message)
     search = message.text
     filename = search
     search = search.replace(' ', '%20')
-    # search = search.replace(' ', '+')
-    # url = f'https://stock.adobe.com/ru/search/images?filters%5Bcontent_type%3Aillustration%5D=1&filters%5Bcontent_type%3Azip_vector%5D=1&filters%5Bcontent_type%3Aimage%5D=1&filters%5Borientation%5D=vertical&filters%5Bcontent_type%3Aphoto%5D=1&k={search}&order=relevance&safe_search=1&limit=100&search_type=usertyped&search_page=1&acp=&aco={search}&get_facets=1'
     url = f'https://yandex.ru/images/search?text={search}&isize=large&iorient=vertical'
     headers = {
         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.54 Safari/537.36'}
 
     r = requests.get(url)
     soup = BeautifulSoup(r.content, 'html.parser')
-    # html_new = str(soup)
     fn = 'pic/'+filename
     os.mkdir(fn)
-    # images = soup.find_all('a', class_='serp-item__link')
-    images = soup.find_all('img')
+    images = soup.find_all('div', role='listitem')
     # print(images)
 
     num = 0
@@ -54,28 +49,26 @@ async def echo(message: types.Message):
 
     for image in images:
         num += 1
-        image_src = image['src']
-        if num >= 2 and num <=10:
-            urlimg = 'https://'+image_src[2:]
-            # print(urlimg)
-            # req = requests.get(urlimg)
-            # html = req.text
-            # tree = etree.HTML(html)
-            # content = tree.xpath('/html/body/div[13]/div[2]/div/div/div/div[3]/div/div[3]/div/div/div[1]/div[4]/div[1]/a')
-            # print(content)
-            # soup = BeautifulSoup(req.content, 'html.parser')
-            # print(soup)
-            # hromg = soup.find_all('img', class_='MMImage-Origin')
-            # print(hromg)
-            # image_full_src = hromg['href']
-            # print(image_full_src)
-
-            # print('----')
+        if num >= 2 and num <=5:
+            image_src = image['data-bem']
+            spl = image_src.split('img_href')[-1:]
+            spl = spl[0].split('useProxy')[:-1]
+            spl = spl[0][3:]
+            image_src = spl[:-3]
+            print(image_src)
+            # urlimg = 'https://'+image_src[2:]
             f = fn + '/' + str(num) + '.jpg'
-            urllib.request.urlretrieve(urlimg, f)
-            # print(f)
-            media.attach_photo(types.InputFile(f))
-            # await bot.send_photo(message.chat.id, types.InputFile(f))
+            # if requests.get(image_src).status_code == 200:
+            r = requests.get(image_src)
+            print(r.status_code)
+            if r.status_code == 200:
+                # urllib.request.urlretrieve(image_src, f)
+                with open(f, 'wb') as outfile:
+                    outfile.write(r.content)
+                media.attach_photo(types.InputFile(f))
+            else:
+                print('photo hueta')
+
     await bot.send_media_group(message.chat.id, media=media)
     print('send imgs user')
     shutil.rmtree(fn)
